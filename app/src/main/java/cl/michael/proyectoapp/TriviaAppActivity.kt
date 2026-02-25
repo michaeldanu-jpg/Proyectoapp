@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,13 +30,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.michael.proyectoapp.trivia.QuizUiState
+import cl.michael.proyectoapp.trivia.QuizViewModel
 import cl.michael.proyectoapp.ui.theme.ProyectoappTheme
 
 class TriviaAppActivity : ComponentActivity() {
@@ -44,8 +48,9 @@ class TriviaAppActivity : ComponentActivity() {
         setContent {
             ProyectoappTheme {
 
-                var state by remember { mutableStateOf(true) } // Use mutableState for dynamic changes
+                val viewModel: QuizViewModel = viewModel()
 
+                val state = viewModel.uiState.collectAsStateWithLifecycle().value
 
                 Scaffold(
                     topBar = {
@@ -56,7 +61,6 @@ class TriviaAppActivity : ComponentActivity() {
                                     color = Color.White
                                 )
                             },
-
                             navigationIcon = {
                                 IconButton(onClick = { finish() }) {
                                     Icon(
@@ -64,7 +68,6 @@ class TriviaAppActivity : ComponentActivity() {
                                         contentDescription = "Volver",
                                         tint = Color.White
                                     )
-
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -74,17 +77,20 @@ class TriviaAppActivity : ComponentActivity() {
                     },
                 ) { innerPadding ->
                     Box(
-                        modifier = Modifier // Corrected typo from 'modififier'
+                        modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
                     ) {
 
-                        if (!state) {
+                        if (state.isFinished) {
                             // vista FinishedScreen
                             FinishedScreen()
                         } else {
                             // vista QuestionScreen
-                            QuestionScreen()
+                            QuestionScreen(
+                                state = state,
+                                onSelectedOption = viewModel::onSelectOption
+                            )
                         }
                     }
                 }
@@ -94,36 +100,53 @@ class TriviaAppActivity : ComponentActivity() {
 }
 
 @Composable
-fun QuestionScreen() {
+fun QuestionScreen(
+    state: QuizUiState,
+    onSelectedOption: (Int) -> Unit
+) {
+
+    // Tomare la pregunta actual desde el estado (derivado)
+    val q = state.currentQuestion ?: return
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Progreso ( 1/5 )
+        // Pregunta ( 1/5 )
         Text(
-            text = "Pregunta 1 de 5",
+            text = "Pregunta ${state.currentIndex + 1} de ${state.questions.size}",
             style = MaterialTheme.typography.titleMedium
         )
         Text(
-            text = "Pregunta 1 ABC",
-            style = MaterialTheme.typography.headlineSmall // Corrected typo from 'MaterialThem' and case from 'headLineSmall'
+            text = q.title,
+            style = MaterialTheme.typography.headlineSmall
         )
+        q.options.forEachIndexed { index, option ->
+            val isSelected = state.selectedIndex == index
 
-        repeat(4) { index -> // Added 'index' to use it below
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelectedOption(index) },
+                elevation = CardDefaults.elevatedCardElevation(
+                    defaultElevation = if (isSelected) 14.dp else 1.dp
+                )
             ) {
-                RadioButton(
-                    selected = false,
-                    onClick = {}
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Respuesta ${index + 1} pregunta 1", // Corrected string interpolation
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = { onSelectedOption(index) }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = option,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
         }
 
@@ -131,18 +154,15 @@ fun QuestionScreen() {
             onClick = {},
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Confirmar") // Corrected typo from 'Comfirmar'
+            Text("Confirmar")
         }
     }
 }
 
 @Composable
 fun FinishedScreen() {
-    // Added a placeholder text
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("¡Trivia finalizada!")
+    // Placeholder for the finished screen
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("¡Felicidades, has terminado!")
     }
 }

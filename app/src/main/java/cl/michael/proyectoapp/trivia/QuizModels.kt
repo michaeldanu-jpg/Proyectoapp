@@ -7,10 +7,20 @@ data class Question(
         val correctIndex: Int           // 2
         )
 
-data class QuizViState(
+data class QuizUiState(
         val questions: List<Question> = emptyList(),  // Banco de preguntas
         val currentIndex: Int = 0,                    // Pregunta actual
         val selectedIndex: Int? = null,               // Opcion seleccionada (null si no hay)
         val score: Int = 0,                           // Puntaje
         val isFinished: Boolean = false               // Flag para pantalla final
-        )
+        ){
+    val currentQuestion: Question?
+        get() = questions.getOrNull(currentIndex)
+}
+
+/**
+ * question = ["Opc 1", "Opc 2", "Opc 3"]
+ * currentIndex = 1
+ *
+ *
+ * */
