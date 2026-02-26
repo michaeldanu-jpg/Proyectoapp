@@ -170,7 +170,8 @@ fun QuestionScreen(
         Button(
             onClick = onConfirm,
             modifier = Modifier.fillMaxWidth(),
-            enabled = state.selectedIndex != null
+            // Aplicado el arreglo sugerido por el profesor
+            enabled = (state.selectedIndex != null) || (state.feedbackMessage != null)
         ) {
             Text(buttonText)
         }
