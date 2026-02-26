@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -49,8 +50,7 @@ class TriviaAppActivity : ComponentActivity() {
             ProyectoappTheme {
 
                 val viewModel: QuizViewModel = viewModel()
-
-                val state = viewModel.uiState.collectAsStateWithLifecycle().value
+                val state by viewModel.uiState.collectAsStateWithLifecycle()
 
                 Scaffold(
                     topBar = {
@@ -83,13 +83,15 @@ class TriviaAppActivity : ComponentActivity() {
                     ) {
 
                         if (state.isFinished) {
-                            // vista FinishedScreen
-                            FinishedScreen()
+                            FinishedScreen(
+                                score = state.score,
+                                total = state.questions.size * 100
+                            )
                         } else {
-                            // vista QuestionScreen
                             QuestionScreen(
                                 state = state,
-                                onSelectedOption = viewModel::onSelectOption
+                                onSelectedOption = viewModel::onSelectOption,
+                                onConfirm = viewModel::onConfirmAnswer
                             )
                         }
                     }
@@ -102,10 +104,9 @@ class TriviaAppActivity : ComponentActivity() {
 @Composable
 fun QuestionScreen(
     state: QuizUiState,
-    onSelectedOption: (Int) -> Unit
+    onSelectedOption: (Int) -> Unit,
+    onConfirm: () -> Unit,
 ) {
-
-    // Tomare la pregunta actual desde el estado (derivado)
     val q = state.currentQuestion ?: return
 
     Column(
@@ -114,7 +115,6 @@ fun QuestionScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Pregunta ( 1/5 )
         Text(
             text = "Pregunta ${state.currentIndex + 1} de ${state.questions.size}",
             style = MaterialTheme.typography.titleMedium
@@ -150,19 +150,63 @@ fun QuestionScreen(
             }
         }
 
+        // Mostrar Feedback si existe
+        if (state.feedbackMessage != null) {
+            Text(
+                text = state.feedbackMessage,
+                style = MaterialTheme.typography.headlineMedium,
+                color = if (state.feedbackMessage.contains("Correcto")) Color(0xFF4CAF50) else Color(0xFFF44336),
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 8.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Botón con texto dinámico
+        val buttonText = when {
+            state.feedbackMessage == null -> "Confirmar"
+            state.isLastQuestion -> "Ver resultados"
+            else -> "Siguiente pregunta"
+        }
+
         Button(
-            onClick = {},
-            modifier = Modifier.fillMaxWidth()
+            onClick = onConfirm,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = state.selectedIndex != null
         ) {
-            Text("Confirmar")
+            Text(buttonText)
         }
     }
 }
 
 @Composable
-fun FinishedScreen() {
-    // Placeholder for the finished screen
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("¡Felicidades, has terminado!")
+fun FinishedScreen(
+    score: Int,
+    total: Int
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "¡Quiz finalizado!",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        Text(
+            text = "Tu puntaje: $score / $total",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        Spacer(modifier = Modifier.height(64.dp))
+
+        Button(onClick = { /* Acción para reintentar si se desea */ }) {
+            Text("Reintentar Quiz")
+        }
     }
 }
