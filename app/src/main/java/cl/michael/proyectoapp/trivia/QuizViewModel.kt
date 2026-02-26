@@ -16,11 +16,15 @@ class QuizViewModel : ViewModel() {
 
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
 
+    fun resetQuiz() {
+        _uiState.value = QuizUiState(
+            questions = seedQuestions()
+        )
+    }
+
     fun onSelectOption(index: Int) {
         val current = _uiState.value
-        // Si ya hay feedback (mostrando resultado), no dejamos cambiar la opción
         if (current.isFinished || current.feedbackMessage != null) return
-
         _uiState.value = current.copy(selectedIndex = index)
     }
 
@@ -29,7 +33,6 @@ class QuizViewModel : ViewModel() {
         val selected = current.selectedIndex ?: return
         val currentQuestion = current.currentQuestion ?: return
 
-        // Si NO hay feedback, estamos evaluando por primera vez
         if (current.feedbackMessage == null) {
             val isCorrect = selected == currentQuestion.correctIndex
             val feedback = if (isCorrect) "✅ Correcto" else "❌ Incorrecto"
@@ -40,14 +43,13 @@ class QuizViewModel : ViewModel() {
                 feedbackMessage = feedback
             )
         } else {
-            // Si YA hay feedback, el usuario presionó de nuevo para continuar
             val nextIndex = current.currentIndex + 1
             val finished = nextIndex >= current.questions.size
 
             _uiState.value = current.copy(
                 currentIndex = nextIndex,
                 selectedIndex = null,
-                feedbackMessage = null, // Limpiamos el feedback para la siguiente
+                feedbackMessage = null,
                 isFinished = finished
             )
         }

@@ -81,11 +81,11 @@ class TriviaAppActivity : ComponentActivity() {
                             .padding(innerPadding)
                             .fillMaxSize()
                     ) {
-
                         if (state.isFinished) {
                             FinishedScreen(
                                 score = state.score,
-                                total = state.questions.size * 100
+                                total = state.questions.size * 100,
+                                onRetry = viewModel::resetQuiz
                             )
                         } else {
                             QuestionScreen(
@@ -150,7 +150,6 @@ fun QuestionScreen(
             }
         }
 
-        // Mostrar Feedback si existe
         if (state.feedbackMessage != null) {
             Text(
                 text = state.feedbackMessage,
@@ -162,7 +161,6 @@ fun QuestionScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Botón con texto dinámico
         val buttonText = when {
             state.feedbackMessage == null -> "Confirmar"
             state.isLastQuestion -> "Ver resultados"
@@ -182,7 +180,8 @@ fun QuestionScreen(
 @Composable
 fun FinishedScreen(
     score: Int,
-    total: Int
+    total: Int,
+    onRetry: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -205,7 +204,10 @@ fun FinishedScreen(
 
         Spacer(modifier = Modifier.height(64.dp))
 
-        Button(onClick = { /* Acción para reintentar si se desea */ }) {
+        Button(
+            onClick = onRetry,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text("Reintentar Quiz")
         }
     }
