@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -34,7 +35,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.michael.proyectoapp.trivia.QuizUiState
@@ -48,7 +51,6 @@ class TriviaAppActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ProyectoappTheme {
-
                 val viewModel: QuizViewModel = viewModel()
                 val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -56,10 +58,29 @@ class TriviaAppActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(
                             title = {
-                                Text(
-                                    "Trivia App",
-                                    color = Color.White
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Trivia App", color = Color.White)
+                                    // Sistema de vidas en el AppBar
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Favorite,
+                                            contentDescription = "Vidas",
+                                            tint = if (state.lives > 0) Color.Red else Color.Gray
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "${state.lives}",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 20.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                    }
+                                }
                             },
                             navigationIcon = {
                                 IconButton(onClick = { finish() }) {
@@ -85,6 +106,7 @@ class TriviaAppActivity : ComponentActivity() {
                             FinishedScreen(
                                 score = state.score,
                                 total = state.questions.size * 100,
+                                livesLeft = state.lives,
                                 onRetry = viewModel::resetQuiz
                             )
                         } else {
@@ -170,11 +192,18 @@ fun QuestionScreen(
         Button(
             onClick = onConfirm,
             modifier = Modifier.fillMaxWidth(),
-            // Aplicado el arreglo sugerido por el profesor
             enabled = (state.selectedIndex != null) || (state.feedbackMessage != null)
         ) {
             Text(buttonText)
         }
+
+        // Porcentaje de avance
+        Text(
+            text = "Porcentaje avance: ${state.progressPercentage}%",
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
     }
 }
 
@@ -182,6 +211,7 @@ fun QuestionScreen(
 fun FinishedScreen(
     score: Int,
     total: Int,
+    livesLeft: Int,
     onRetry: () -> Unit
 ) {
     Column(
@@ -192,11 +222,12 @@ fun FinishedScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "¡Quiz finalizado!",
-            style = MaterialTheme.typography.headlineMedium
+            text = if (livesLeft <= 0) "¡Game Over!" else "¡Quiz finalizado!",
+            style = MaterialTheme.typography.headlineMedium,
+            color = if (livesLeft <= 0) Color.Red else Color.Unspecified
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Tu puntaje: $score / $total",

@@ -12,6 +12,7 @@ data class QuizUiState(
     val currentIndex: Int = 0,
     val selectedIndex: Int? = null,
     val score: Int = 0,
+    val lives: Int = 3,
     val isFinished: Boolean = false,
     val feedbackMessage: String? = null 
 ) {
@@ -20,4 +21,7 @@ data class QuizUiState(
 
     val isLastQuestion: Boolean
         get() = currentIndex == questions.size - 1
+
+    val progressPercentage: Int
+        get() = if (questions.isEmpty()) 0 else (currentIndex * 100) / questions.size
 }
